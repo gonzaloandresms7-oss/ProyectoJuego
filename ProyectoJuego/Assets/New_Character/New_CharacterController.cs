@@ -107,5 +107,8 @@ void UpdateAnimator()
     animator?.SetFloat("VerticalSpeed", Velocity.y);
 }
 
-
+public void SetExternalVelocity(Vector3 platformVelocity)
+    {
+        externalVelocity=platformVelocity;
+    }
 }
