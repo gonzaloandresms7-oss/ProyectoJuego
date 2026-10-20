@@ -12,7 +12,7 @@ public class CollectibleManagerS : MonoBehaviour
     public TextMeshProUGUI itemCounter;
     public int totalItemScene=2;
     public string collectibleTad="Colectible";
-    private static int itemsCollected=0;
+    private int itemsCollected=0;
 
     [Header("Lista De Objetos")]
     public List<Transform>collectibles =new List<Transform>();
