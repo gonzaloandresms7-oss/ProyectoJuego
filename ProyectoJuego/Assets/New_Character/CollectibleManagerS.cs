@@ -18,7 +18,7 @@ public class CollectibleManagerS : MonoBehaviour
     public List<Transform>collectibles =new List<Transform>();
     private Dictionary<Transform,Vector3> startposition= new Dictionary<Transform, Vector3>();
 
-
+    public TimeSystem timer;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -59,6 +59,8 @@ public class CollectibleManagerS : MonoBehaviour
         if(!collectibles.Contains(obj)) return;
         collectibles.Remove(obj);
         itemsCollected++;
+        if (timer != null)
+        timer.AddTime(timer.timeBonus);        
         UpdatedCounterUI();
         Destroy(obj.gameObject);
     }
