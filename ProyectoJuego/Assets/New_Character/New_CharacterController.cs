@@ -10,6 +10,11 @@ public class New_CharacterController : MonoBehaviour
     public float mouseSensivity=1f;
     public float gravity=-20f;
 
+    [Header("Doble salto")]
+    public int maxAirJumps = 1;
+    public float airJumpHeight = 1.6f;
+    private int airJumpsLeft;
+
     [Header("Referenciación")]
     public Transform cameraTransform;
     public Animator animator;
@@ -53,7 +58,10 @@ public class New_CharacterController : MonoBehaviour
     IsGrounded = characterController.isGrounded;
 
     if (IsGrounded)
+    {
         coyoteTimeCounter = coyoteTime;
+        airJumpsLeft=maxAirJumps;
+    }
     else
         coyoteTimeCounter -= Time.deltaTime;
 
@@ -86,13 +94,26 @@ public class New_CharacterController : MonoBehaviour
 
     if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
     {
+    // salto normal (el que ya tienes)
         Velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         animator?.SetBool("IsJumping", true);
 
         jumpBufferCounter = 0f;
         coyoteTimeCounter = 0f;
     }
+    else if (Input.GetButtonDown("Jump") && !IsGrounded && coyoteTimeCounter <= 0f && airJumpsLeft > 0)
+    {
+    // salto en el aire
+        Velocity.y = Mathf.Sqrt(airJumpHeight * -2f * gravity);
+        airJumpsLeft--;
+        jumpBufferCounter = 0f;
 
+        if (animator != null)
+        {
+            animator.SetBool("IsJumping", true);
+        // animator.SetTrigger("DoubleJump"); // si luego quieres una animación propia
+        }
+    }
     Velocity.y += gravity * Time.deltaTime;
 
     Vector3 finalMovement = (moveDirection * currentSpeed + externalVelocity) * Time.deltaTime;

@@ -372,7 +372,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.000000029503, y: 3.146, z: 2.89}
-  m_LocalScale: {x: 0.93813, y: 1.6495064, z: 1.2611713}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 207301549}
@@ -588,6 +588,8 @@ MonoBehaviour:
   mouseSensivity: 0.5
   minPitch: -20
   maxPitch: 60
+  shakeDuration: 0.3
+  shakeMagnitude: 0.15
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1424,7 +1426,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8de80a07e4bd32442bd523e00f048be4, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.0943
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8de80a07e4bd32442bd523e00f048be4, type: 3}
       propertyPath: m_LocalPosition.x
