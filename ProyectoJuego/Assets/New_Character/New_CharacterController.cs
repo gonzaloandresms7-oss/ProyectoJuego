@@ -13,15 +13,17 @@ public class New_CharacterController : MonoBehaviour
     [Header("Doble salto")]
     public int maxAirJumps = 1;
     public float airJumpHeight = 1.6f;
+    public LayerMask groundMask = ~0;
     private int airJumpsLeft;
 
     [Header("Referenciación")]
     public Transform cameraTransform;
     public Animator animator;
+    
     //puse jumpbuffer y coyotetime para hacer más fluido la animación
     [Header("Salto fluido")]
     public float coyoteTime = 0.15f;
-    public float jumpBufferTime = 0.15f;
+    public float jumpBufferTime = 0.2f;
     public float groundedStickForce = -5f;
     private float coyoteTimeCounter;
     private float jumpBufferCounter;
@@ -52,6 +54,21 @@ public class New_CharacterController : MonoBehaviour
         UpdateAnimator();
 
     }
+
+    //Para ayudar a que el doble salto tenga timebuffer
+    bool WouldLandSoon()
+{
+    if (Velocity.y >= 0f) return false;
+
+    float checkDistance = Mathf.Abs(Velocity.y) * jumpBufferTime;
+
+    Vector3 feet = transform.position + characterController.center
+                   - Vector3.up * (characterController.height * 0.5f);
+
+    return Physics.Raycast(feet + Vector3.up * 0.1f, Vector3.down,
+                           checkDistance + 0.1f, groundMask,
+                           QueryTriggerInteraction.Ignore);
+}
 
     void HandleMovement()
 {
@@ -92,18 +109,17 @@ public class New_CharacterController : MonoBehaviour
         currentSpeed = isSprinting ? SprintSpeed : WalkSpeed;
     }
 
+    //Añadir doble salto
     if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
     {
-    // salto normal (el que ya tienes)
         Velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         animator?.SetBool("IsJumping", true);
 
         jumpBufferCounter = 0f;
         coyoteTimeCounter = 0f;
     }
-    else if (Input.GetButtonDown("Jump") && !IsGrounded && coyoteTimeCounter <= 0f && airJumpsLeft > 0)
+    else if (Input.GetButtonDown("Jump") && !IsGrounded && coyoteTimeCounter <= 0f && airJumpsLeft > 0 && !WouldLandSoon())
     {
-    // salto en el aire
         Velocity.y = Mathf.Sqrt(airJumpHeight * -2f * gravity);
         airJumpsLeft--;
         jumpBufferCounter = 0f;
@@ -111,7 +127,6 @@ public class New_CharacterController : MonoBehaviour
         if (animator != null)
         {
             animator.SetBool("IsJumping", true);
-        // animator.SetTrigger("DoubleJump"); // si luego quieres una animación propia
         }
     }
     Velocity.y += gravity * Time.deltaTime;
