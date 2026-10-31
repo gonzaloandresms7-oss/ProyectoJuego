@@ -19,7 +19,7 @@ public class New_CharacterController : MonoBehaviour
     [Header("Referenciación")]
     public Transform cameraTransform;
     public Animator animator;
-    
+
     //puse jumpbuffer y coyotetime para hacer más fluido la animación
     [Header("Salto fluido")]
     public float coyoteTime = 0.15f;
@@ -39,6 +39,39 @@ public class New_CharacterController : MonoBehaviour
     public bool IsGrounded{get;private set;}
     public float CurrentYaw => yaw;
 
+    //Codigo nuevo
+    [Header("Empujar objetos")]
+    public KeyCode pushKey = KeyCode.E;
+    public float pushPower = 2f;
+    public float maxPushSpeed = 2.5f;
+    public float pushMoveMultiplier = 0.6f;
+    public GameObject pushPrompt;
+    private float lastPushableTouchTime = -10f;
+    public bool IsPushing { get; private set; }
+
+    void OnControllerColliderHit(ControllerColliderHit hit)
+{
+    Rigidbody body = hit.collider.attachedRigidbody;
+    if (body == null || body.isKinematic) return;
+
+    if (hit.moveDirection.y < -0.3f) return;
+
+    // Contacto con un objeto empujable (sirve para el aviso y la animación)
+    lastPushableTouchTime = Time.time;
+
+    // Solo empujar si se mantiene la tecla y el jugador se está moviendo
+    if (!IsMoving || !Input.GetKey(pushKey)) return;
+
+    Vector3 pushDir = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z).normalized;
+
+    float massFactor = 1f / Mathf.Max(1f, body.mass);
+    Vector3 targetVelocity = pushDir * pushPower * massFactor * currentSpeed;
+    targetVelocity = Vector3.ClampMagnitude(targetVelocity, maxPushSpeed);
+
+    Vector3 current = body.linearVelocity;   // Unity 2022 o anterior: body.velocity
+    body.linearVelocity = new Vector3(targetVelocity.x, current.y, targetVelocity.z);
+}
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -52,7 +85,7 @@ public class New_CharacterController : MonoBehaviour
         HandleMovement();
         HandleRotation();
         UpdateAnimator();
-
+        UpdatePushPrompt();
     }
 
     //Para ayudar a que el doble salto tenga timebuffer
@@ -99,15 +132,24 @@ public class New_CharacterController : MonoBehaviour
     float vertical = Input.GetAxis("Vertical");
     Vector3 inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
     IsMoving = inputDirection.magnitude > 0.1f;
+    IsPushing = IsMoving && IsGrounded && Input.GetKey(pushKey) && Time.time - lastPushableTouchTime < 0.15f;
 
     Vector3 moveDirection = Vector3.zero;
 
-    if (IsMoving)
+   if (IsMoving)
+{
+    moveDirection = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f) * inputDirection;
+
+    if (IsPushing)
     {
-        moveDirection = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f) * inputDirection;
+        currentSpeed = WalkSpeed * pushMoveMultiplier;
+    }
+    else
+    {
         bool isSprinting = Input.GetKey(KeyCode.LeftShift);
         currentSpeed = isSprinting ? SprintSpeed : WalkSpeed;
     }
+}
 
     //Añadir doble salto
     if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
@@ -162,6 +204,15 @@ void UpdateAnimator()
     animator?.SetFloat("Speed", SpeedPercent, 0.1f, Time.deltaTime);
     animator?.SetBool("IsGrounded", IsGrounded);
     animator?.SetFloat("VerticalSpeed", Velocity.y);
+    animator.SetBool("IsPushing", IsPushing);
+}
+
+void UpdatePushPrompt()
+{
+    if (pushPrompt == null) return;
+
+    bool touching = Time.time - lastPushableTouchTime < 0.15f;
+    pushPrompt.SetActive(touching);
 }
 
 public void SetExternalVelocity(Vector3 platformVelocity)

@@ -6,6 +6,7 @@ TagManager:
   tags:
   - DeathZone
   - Collectible
+  - Grabbable
   layers:
   - Default
   - TransparentFX
