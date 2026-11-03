@@ -15,6 +15,7 @@ public class New_CharacterController : MonoBehaviour
     public float airJumpHeight = 1.6f;
     public LayerMask groundMask = ~0;
     private int airJumpsLeft;
+    public float landingBlockMaxDistance = 0.4f;
 
     [Header("Referenciación")]
     public Transform cameraTransform;
@@ -62,24 +63,25 @@ public class New_CharacterController : MonoBehaviour
     // Solo empujar si se mantiene la tecla y el jugador se está moviendo
     if (!IsMoving || !Input.GetKey(pushKey)) return;
 
+    PushableObject pushable = body.GetComponent<PushableObject>();
+    if (pushable != null) pushable.Push();
+
     Vector3 pushDir = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z).normalized;
 
     float massFactor = 1f / Mathf.Max(1f, body.mass);
     Vector3 targetVelocity = pushDir * pushPower * massFactor * currentSpeed;
     targetVelocity = Vector3.ClampMagnitude(targetVelocity, maxPushSpeed);
 
-    Vector3 current = body.linearVelocity;   // Unity 2022 o anterior: body.velocity
+    Vector3 current = body.linearVelocity;  
     body.linearVelocity = new Vector3(targetVelocity.x, current.y, targetVelocity.z);
 }
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         characterController=GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
     }
 
-    // Update is called once per frame
     void Update()
     {
         HandleMovement();
@@ -93,7 +95,7 @@ public class New_CharacterController : MonoBehaviour
 {
     if (Velocity.y >= 0f) return false;
 
-    float checkDistance = Mathf.Abs(Velocity.y) * jumpBufferTime;
+    float checkDistance = Mathf.Min(Mathf.Abs(Velocity.y) * jumpBufferTime, landingBlockMaxDistance);
 
     Vector3 feet = transform.position + characterController.center
                    - Vector3.up * (characterController.height * 0.5f);
@@ -169,6 +171,7 @@ public class New_CharacterController : MonoBehaviour
         if (animator != null)
         {
             animator.SetBool("IsJumping", true);
+            animator.SetTrigger("DoubleJump");
         }
     }
     Velocity.y += gravity * Time.deltaTime;

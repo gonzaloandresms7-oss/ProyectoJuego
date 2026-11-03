@@ -11,8 +11,9 @@ public class CameraController : MonoBehaviour
     public float mouseSensivity=0.5f;
 
     [Header("Orbita")]
-    public float minPitch=-20f;
+    public float minPitch=-50f;
     public float maxPitch=60f;
+    public float lookUpMultiplier = 1.2f;
 
     private float yaw;
     private float pitch;
@@ -55,6 +56,9 @@ public class CameraController : MonoBehaviour
 
         mainCamera.position=Vector3.Lerp(mainCamera.position, targetPosition, followSpeed*Time.deltaTime);
         mainCamera.LookAt(cameraTarget);
+
+        float extraLookUp = Mathf.Min(0f, pitch) * lookUpMultiplier;
+        mainCamera.rotation *= Quaternion.Euler(extraLookUp, 0f, 0f);
     }
 
 }
