@@ -9,6 +9,7 @@ public class New_CharacterController : MonoBehaviour
     public float rotationSpeed=10f;
     public float mouseSensivity=1f;
     public float gravity=-20f;
+    private Vector3 faceDirection;
 
     [Header("Doble salto")]
     public int maxAirJumps = 1;
@@ -153,6 +154,7 @@ public class New_CharacterController : MonoBehaviour
    if (IsMoving)
 {
     moveDirection = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f) * inputDirection;
+    faceDirection = moveDirection;
 
     if (IsPushing)
     {
@@ -203,14 +205,9 @@ public class New_CharacterController : MonoBehaviour
 
     void HandleRotation()
     {
-        float mouseX = Input.GetAxis("Mouse X")*mouseSensivity;
-        yaw += mouseX;
-
-        if(IsMoving)
-        {
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0f, yaw, 0f), rotationSpeed*Time.deltaTime);
-
-        }
+        if (!IsMoving || faceDirection.sqrMagnitude < 0.001f) return;
+        Quaternion targetRot = Quaternion.LookRotation(faceDirection, Vector3.up);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
     }
     
   
