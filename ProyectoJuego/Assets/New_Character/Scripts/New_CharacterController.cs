@@ -50,6 +50,18 @@ public class New_CharacterController : MonoBehaviour
     private float lastPushableTouchTime = -10f;
     public bool IsPushing { get; private set; }
 
+    //Agregar sonido al salto y doble salto
+    [Header("Sonidos")]
+    public AudioSource sfxSource;
+    public AudioClip jumpClip;
+    public AudioClip doubleJumpClip;
+    [Range(0f, 1f)] public float sfxVolume = 0.8f;
+
+    //Variables para el movimiento en la banda transportadora
+    private Vector3 platformPush;
+    private float platformPushTime = -10f;
+
+
     void OnControllerColliderHit(ControllerColliderHit hit)
 {
     Rigidbody body = hit.collider.attachedRigidbody;
@@ -158,6 +170,7 @@ public class New_CharacterController : MonoBehaviour
     {
         Velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         animator?.SetBool("IsJumping", true);
+        PlaySFX(jumpClip);
 
         jumpBufferCounter = 0f;
         coyoteTimeCounter = 0f;
@@ -167,6 +180,7 @@ public class New_CharacterController : MonoBehaviour
         Velocity.y = Mathf.Sqrt(airJumpHeight * -2f * gravity);
         airJumpsLeft--;
         jumpBufferCounter = 0f;
+        PlaySFX(doubleJumpClip);
 
         if (animator != null)
         {
@@ -175,8 +189,8 @@ public class New_CharacterController : MonoBehaviour
         }
     }
     Velocity.y += gravity * Time.deltaTime;
-
-    Vector3 finalMovement = (moveDirection * currentSpeed + externalVelocity) * Time.deltaTime;
+    Vector3 push = (Time.time - platformPushTime < 0.1f) ? platformPush : Vector3.zero;
+    Vector3 finalMovement = (moveDirection * currentSpeed + externalVelocity + push) * Time.deltaTime;
     finalMovement.y += Velocity.y * Time.deltaTime;
 
     characterController.Move(finalMovement);
@@ -222,4 +236,19 @@ public void SetExternalVelocity(Vector3 platformVelocity)
     {
         externalVelocity=platformVelocity;
     }
+
+//Metodo nuevo para el sonido cuando salte 
+void PlaySFX(AudioClip clip)
+{
+    if (clip != null && sfxSource != null)
+        sfxSource.PlayOneShot(clip, sfxVolume);
 }
+
+//Metodo para la plataforma que empuja
+public void SetPlatformPush(Vector3 velocity)
+{
+    platformPush = velocity;
+    platformPushTime = Time.time;
+}
+}
+

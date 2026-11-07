@@ -20,6 +20,10 @@ public class CollectibleManagerS : MonoBehaviour
 
     public TimeSystem timer;
 
+    [Header("Sonido")]
+    public AudioClip collectClip;
+    [Range(0f, 1f)] public float collectVolume = 0.8f;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -62,6 +66,8 @@ public class CollectibleManagerS : MonoBehaviour
         if (timer != null)
         timer.AddTime(timer.timeBonus);        
         UpdatedCounterUI();
+        if (collectClip != null)
+        AudioSource.PlayClipAtPoint(collectClip, Camera.main.transform.position, collectVolume);
         Destroy(obj.gameObject);
     }
 
