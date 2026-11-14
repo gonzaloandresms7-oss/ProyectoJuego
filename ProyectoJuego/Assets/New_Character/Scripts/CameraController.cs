@@ -1,5 +1,4 @@
 using UnityEngine;
-
 public class CameraController : MonoBehaviour
 {
     [Header("Objetivo")]
@@ -9,13 +8,18 @@ public class CameraController : MonoBehaviour
     [Header("Encuadre")]
     public float distance = 9f;
     public float focusHeight = 1f;
-    [Range(-10f, 30f)] public float pitch = 6f;
+    [Range(-10f, 60f)] public float pitch = 6f;
     [Range(-180f, 180f)] public float yaw = -90f;
     public float fieldOfView = 45f;
 
+    [Header("FOV dinámico")]
+    public float sprintFovIncrease = 10f;
+    public float pushFovDecrease = 8f;
+    public float fovSmoothTime = 0.25f;
+
     [Header("Seguimiento suave")]
     public float horizontalSmoothTime = 0.25f;
-    public float verticalSmoothTime = 0.4f;   
+    public float verticalSmoothTime = 0.4f;   // mas alto = no rebota tanto al saltar
 
     [Header("Anticipacion (look ahead)")]
     public float lookAheadFactor = 0.6f;
@@ -32,12 +36,21 @@ public class CameraController : MonoBehaviour
     private Vector3 lookAheadVelocity;
     private float velX, velY, velZ;
 
+    // FOV dinamico
+    private New_CharacterController playerCtrl;
+    private float currentFov;
+    private float fovVelocity;
+
     void Start()
     {
         cam = Camera.main;
         mainCamera = cam.transform;
 
         if (cameraTarget == null) cameraTarget = player;
+
+        // El CameraTarget es hijo del Player, asi que lo encuentra hacia arriba en la jerarquia
+        playerCtrl = cameraTarget.GetComponentInParent<New_CharacterController>();
+        currentFov = fieldOfView;
 
         lastTargetPos = cameraTarget.position;
         mainCamera.rotation = Quaternion.Euler(pitch, yaw, 0f);
@@ -49,7 +62,7 @@ public class CameraController : MonoBehaviour
     {
         if (cameraTarget == null) return;
 
-        cam.fieldOfView = fieldOfView;
+        UpdateFov();
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
 
         UpdateLookAhead();
@@ -59,6 +72,7 @@ public class CameraController : MonoBehaviour
 
         if ((desiredPos - pos).sqrMagnitude > snapDistance * snapDistance)
         {
+            // Respawn u otro salto grande: ir directo, sin viajar por todo el nivel
             pos = desiredPos;
             velX = velY = velZ = 0f;
             lookAhead = Vector3.zero;
@@ -72,7 +86,21 @@ public class CameraController : MonoBehaviour
         }
 
         mainCamera.position = pos;
-        mainCamera.rotation = rotation;   
+        mainCamera.rotation = rotation;   // rotacion fija, no hay LookAt
+    }
+
+    void UpdateFov()
+    {
+        float targetFov = fieldOfView;
+
+        if (playerCtrl != null)
+        {
+            if (playerCtrl.IsPushing) targetFov -= pushFovDecrease;
+            else if (playerCtrl.IsSprinting) targetFov += sprintFovIncrease;
+        }
+
+        currentFov = Mathf.SmoothDamp(currentFov, targetFov, ref fovVelocity, fovSmoothTime);
+        cam.fieldOfView = currentFov;
     }
 
     void UpdateLookAhead()
