@@ -251,4 +251,15 @@ public class New_CharacterController : MonoBehaviour
         platformPush = velocity;
         platformPushTime = Time.time;
     }
+
+    //Metodo para el trampolin
+    public void Launch(float launchHeight)
+    {
+        Velocity.y = Mathf.Sqrt(launchHeight * -2f * gravity);
+        coyoteTimeCounter = 0f;
+        jumpBufferCounter = 0f;
+        airJumpsLeft = maxAirJumps;   // recupera el doble salto para poder encadenar
+
+        if (animator != null) animator.SetBool("IsJumping", true);
+    }
 }
