@@ -5,29 +5,34 @@ using UnityEngine;
 public class StartScreen : MonoBehaviour
 {
     [Header("Referencias")]
-    [Tooltip("Panel de la pantalla de inicio (el que tiene el logo)")]
     public GameObject startPanel;
-    [Tooltip("Opcional: CanvasGroup del panel, para que se desvanezca suavemente")]
     public CanvasGroup panelGroup;
-    [Tooltip("El jugador (para bloquear sus controles hasta empezar)")]
     public New_CharacterController player;
 
     [Header("Inicio")]
     public KeyCode startKey = KeyCode.Space;
+    public IntroVideo intro;
     public float fadeOutTime = 0.35f;
 
-    [Header("Texto parpadeante (opcional)")]
-    public TextMeshProUGUI promptText;
+    [Header("Texto parpadeante")]
+    public CanvasGroup promptGroup;    
     public float pulseSpeed = 3f;
 
     private bool started;
 
     void Awake()
     {
-     
         Time.timeScale = 0f;
 
-        if (startPanel != null) startPanel.SetActive(true);
+        AudioListener.pause = true;
+
+        if (startPanel != null)
+        {
+            startPanel.SetActive(true);
+            startPanel.transform.SetAsLastSibling();
+        }
+        if (panelGroup != null) panelGroup.alpha = 1f;
+
         if (player != null) player.enabled = false;   
     }
 
@@ -35,14 +40,9 @@ public class StartScreen : MonoBehaviour
     {
         if (started) return;
 
-        if (promptText != null)
-        {
-            float a = Mathf.Lerp(0.45f, 1f, (Mathf.Sin(Time.unscaledTime * pulseSpeed) + 1f) * 0.5f);
-            Color c = promptText.color;
-            c.a = a;
-            promptText.color = c;
-        }
-
+        if (promptGroup != null)
+        promptGroup.alpha = Mathf.Lerp(0.45f, 1f, (Mathf.Sin(Time.unscaledTime * pulseSpeed) + 1f) * 0.5f);
+        if (intro != null && intro.BlocksStart) return;
         if (Input.GetKeyDown(startKey))
             StartCoroutine(BeginGame());
     }
@@ -60,14 +60,18 @@ public class StartScreen : MonoBehaviour
                 panelGroup.alpha = 1f - Mathf.Clamp01(t / fadeOutTime);
                 yield return null;
             }
+            panelGroup.alpha = 0f;
         }
 
-        if (startPanel != null) startPanel.SetActive(false);
-
         Time.timeScale = 1f;
+        AudioListener.pause = false;
 
         yield return null;
 
         if (player != null) player.enabled = true;
+
+        if (startPanel != null) startPanel.SetActive(false);
+
+        Debug.Log("StartScreen: juego iniciado");
     }
 }
