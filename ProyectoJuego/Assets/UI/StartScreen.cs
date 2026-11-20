@@ -8,20 +8,41 @@ public class StartScreen : MonoBehaviour
     public GameObject startPanel;
     public CanvasGroup panelGroup;
     public New_CharacterController player;
+    public IntroVideo intro;
 
     [Header("Inicio")]
     public KeyCode startKey = KeyCode.Space;
-    public IntroVideo intro;
     public float fadeOutTime = 0.35f;
 
-    [Header("Texto parpadeante")]
-    public CanvasGroup promptGroup;    
+    [Header("Texto parpadeante (opcional)")]
+    public TextMeshProUGUI promptText;
+    public CanvasGroup promptGroup;
     public float pulseSpeed = 3f;
 
     private bool started;
 
+    private static bool alreadyStarted;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics() { alreadyStarted = false; }
+
+    public bool GameStarted => started;
+
+    public static void ShowOnNextLoad() { alreadyStarted = false; }
+
     void Awake()
     {
+        if (alreadyStarted)
+        {
+            started = true;
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
+            if (startPanel != null) startPanel.SetActive(false);
+            if (panelGroup != null) panelGroup.alpha = 0f;
+            if (player != null) player.enabled = true;
+            return;
+        }
+
         Time.timeScale = 0f;
 
         AudioListener.pause = true;
@@ -33,16 +54,24 @@ public class StartScreen : MonoBehaviour
         }
         if (panelGroup != null) panelGroup.alpha = 1f;
 
-        if (player != null) player.enabled = false;   
+        if (player != null) player.enabled = false;  
     }
 
     void Update()
     {
         if (started) return;
 
-        if (promptGroup != null)
-        promptGroup.alpha = Mathf.Lerp(0.45f, 1f, (Mathf.Sin(Time.unscaledTime * pulseSpeed) + 1f) * 0.5f);
+        float a = Mathf.Lerp(0.45f, 1f, (Mathf.Sin(Time.unscaledTime * pulseSpeed) + 1f) * 0.5f);
+        if (promptGroup != null) promptGroup.alpha = a;
+        if (promptText != null)
+        {
+            Color c = promptText.color;
+            c.a = a;
+            promptText.color = c;
+        }
+
         if (intro != null && intro.BlocksStart) return;
+
         if (Input.GetKeyDown(startKey))
             StartCoroutine(BeginGame());
     }
@@ -69,6 +98,8 @@ public class StartScreen : MonoBehaviour
         yield return null;
 
         if (player != null) player.enabled = true;
+
+        alreadyStarted = true;
 
         if (startPanel != null) startPanel.SetActive(false);
 
