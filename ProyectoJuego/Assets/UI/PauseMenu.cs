@@ -31,11 +31,14 @@ public class PauseMenu : MonoBehaviour
 
         if (IsPaused) { Resume(); return; }
 
+        if (GameOverScreen.IsShown) return;
+
         if (startScreen != null && !startScreen.GameStarted) return;
         if (intro != null && intro.BlocksStart) return;
 
         Pause();
     }
+
 
     public void Pause()
     {
@@ -54,7 +57,7 @@ public class PauseMenu : MonoBehaviour
         if (pausePanel != null)
         {
             pausePanel.SetActive(true);
-            pausePanel.transform.SetAsLastSibling();
+            pausePanel.transform.SetAsLastSibling();   
         }
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }

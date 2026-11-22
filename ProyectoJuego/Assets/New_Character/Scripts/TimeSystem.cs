@@ -13,21 +13,21 @@ public class TimeSystem : MonoBehaviour
     public Color lowTimeColor;
     public float lowTimeThreshold = 10f;
 
-    // NUEVO: el reloj que tiembla en los ultimos segundos
     [Header("Reloj")]
     public ClockShakeEffect clockShake;
 
+    [Header("Game Over")]
+    public GameOverScreen gameOver;
+
     private float currentTime;
     private bool isRunning=true;
-    private bool clockShaking = false;   // NUEVO
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private bool clockShaking = false;   
     void Start()
     {
         currentTime = startTime;
         UpdateTimerUI();
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (!isRunning) return;
@@ -39,13 +39,13 @@ public class TimeSystem : MonoBehaviour
             currentTime = 0f;
             isRunning = false;
             UpdateTimerUI();
-            UpdateClockShake();   // NUEVO
+            UpdateClockShake();   
             OnTimeOut();
             return;
         }
 
         UpdateTimerUI();
-        UpdateClockShake();       // NUEVO
+        UpdateClockShake();       
     }
     public void AddTime(float seconds)
     {
@@ -64,7 +64,6 @@ public class TimeSystem : MonoBehaviour
         timerText.color = currentTime <= lowTimeThreshold ? lowTimeColor : normalColor;
     }
 
-    // NUEVO: tiembla mientras quede poco tiempo y vuelve a su sitio si lo recuperas
     void UpdateClockShake()
     {
         if (clockShake == null) return;
@@ -76,7 +75,6 @@ public class TimeSystem : MonoBehaviour
         }
         else if (clockShaking)
         {
-            // Recogiste un coleccionable y subiste del umbral: dejar de temblar
             clockShake.ResetPosition();
             clockShaking = false;
         }
@@ -85,7 +83,14 @@ public class TimeSystem : MonoBehaviour
     void OnTimeOut()
     {
         Debug.Log("Se acabó el tiempo");
-        if (clockShake != null) clockShake.ResetPosition();   // NUEVO
+        if (clockShake != null) clockShake.ResetPosition();  
+
+        if (gameOver != null)
+        {
+            gameOver.Show();
+            return;
+        }
+
         SceneManager.LoadScene("SampleScene");
     }
 }
