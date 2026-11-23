@@ -93,4 +93,11 @@ public class TimeSystem : MonoBehaviour
 
         SceneManager.LoadScene("SampleScene");
     }
+
+    //Metodo para cuando el jugador gana
+    public void StopTimer()
+{
+    isRunning = false;
+    if (clockShake != null) clockShake.ResetPosition();
+}
 }

@@ -32,6 +32,8 @@ public class PauseMenu : MonoBehaviour
         if (IsPaused) { Resume(); return; }
 
         if (GameOverScreen.IsShown) return;
+        //Este if es para cuando el jugador gane
+        if (WinScreen.InProgress) return;
 
         if (startScreen != null && !startScreen.GameStarted) return;
         if (intro != null && intro.BlocksStart) return;

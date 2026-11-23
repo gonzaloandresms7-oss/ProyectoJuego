@@ -19,6 +19,9 @@ public class StartScreen : MonoBehaviour
     public CanvasGroup promptGroup;
     public float pulseSpeed = 3f;
 
+    [Header("Música de fondo")]
+    public AudioSource musicSource;   // el mismo AudioSource de la música ambiental
+
     private bool started;
 
     private static bool alreadyStarted;
@@ -40,6 +43,7 @@ public class StartScreen : MonoBehaviour
             if (startPanel != null) startPanel.SetActive(false);
             if (panelGroup != null) panelGroup.alpha = 0f;
             if (player != null) player.enabled = true;
+            EnsureMusicPlaying();
             return;
         }
 
@@ -54,7 +58,7 @@ public class StartScreen : MonoBehaviour
         }
         if (panelGroup != null) panelGroup.alpha = 1f;
 
-        if (player != null) player.enabled = false;  
+        if (player != null) player.enabled = false;
     }
 
     void Update()
@@ -94,6 +98,7 @@ public class StartScreen : MonoBehaviour
 
         Time.timeScale = 1f;
         AudioListener.pause = false;
+        EnsureMusicPlaying();
 
         yield return null;
 
@@ -105,4 +110,14 @@ public class StartScreen : MonoBehaviour
 
         Debug.Log("StartScreen: juego iniciado");
     }
+    void EnsureMusicPlaying()
+{
+    var music = MusicManager.Instance;
+    if (music == null)
+    {
+        Debug.LogWarning("StartScreen: no hay MusicManager en la escena");
+        return;
+    }
+    music.PlayMusic();
+}
 }
