@@ -20,7 +20,7 @@ public class StartScreen : MonoBehaviour
     public float pulseSpeed = 3f;
 
     [Header("Música de fondo")]
-    public AudioSource musicSource;   // el mismo AudioSource de la música ambiental
+    public AudioSource musicSource;
 
     private bool started;
 
@@ -32,6 +32,16 @@ public class StartScreen : MonoBehaviour
     public bool GameStarted => started;
 
     public static void ShowOnNextLoad() { alreadyStarted = false; }
+
+    public void QuitGame()
+    {
+        Debug.Log("StartScreen: salir del juego");
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
 
     void Awake()
     {
@@ -59,6 +69,9 @@ public class StartScreen : MonoBehaviour
         if (panelGroup != null) panelGroup.alpha = 1f;
 
         if (player != null) player.enabled = false;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     void Update()
@@ -110,14 +123,15 @@ public class StartScreen : MonoBehaviour
 
         Debug.Log("StartScreen: juego iniciado");
     }
+
     void EnsureMusicPlaying()
-{
-    var music = MusicManager.Instance;
-    if (music == null)
     {
-        Debug.LogWarning("StartScreen: no hay MusicManager en la escena");
-        return;
+        var music = MusicManager.Instance;
+        if (music == null)
+        {
+            Debug.LogWarning("StartScreen: no hay MusicManager en la escena");
+            return;
+        }
+        music.PlayMusic();
     }
-    music.PlayMusic();
-}
 }

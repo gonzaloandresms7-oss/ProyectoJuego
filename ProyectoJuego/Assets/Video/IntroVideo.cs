@@ -3,29 +3,23 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
 
-// Video de introduccion: se reproduce apenas empieza la escena, se puede saltar con una tecla
-// y al terminar (o saltarlo) deja paso a StartScreen (el logo de "Presiona ESPACIO").
-// Ponlo en un objeto vacio que NO sea el panel del video. Unity agrega solo el Video Player y el Audio Source.
 [RequireComponent(typeof(VideoPlayer))]
 [RequireComponent(typeof(AudioSource))]
 public class IntroVideo : MonoBehaviour
 {
     [Header("Referencias")]
-    [Tooltip("Panel negro de pantalla completa que contiene el RawImage")]
     public GameObject videoPanel;
-    [Tooltip("RawImage donde se dibuja el video")]
     public RawImage videoImage;
 
     [Header("Saltar")]
     public KeyCode skipKey = KeyCode.Return;
-    [Tooltip("Segundos antes de poder saltar (evita saltarlo sin querer)")]
     public float skipDelay = 0.5f;
 
     [Header("Opciones")]
-    [Tooltip("Si el juego recarga la escena (al acabarse el tiempo), no repetir el video")]
     public bool playOnlyOnce = true;
+    public float prepareTimeout = 5f;
+    public float stallTimeout = 3f;
 
-    // StartScreen consulta esto: mientras sea true, no acepta la tecla de inicio
     public bool IsPlaying { get; private set; } = true;
     public int FinishedFrame { get; private set; } = -1;
     public bool BlocksStart => IsPlaying || Time.frameCount == FinishedFrame;
@@ -37,6 +31,7 @@ public class IntroVideo : MonoBehaviour
     private RenderTexture rt;
     private float startTime;
     private bool ended;
+    private bool playing;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetStatics() { alreadyPlayed = false; }
@@ -46,14 +41,25 @@ public class IntroVideo : MonoBehaviour
         vp = GetComponent<VideoPlayer>();
         audioSrc = GetComponent<AudioSource>();
 
-        // El audio del video debe sonar aunque StartScreen pause el audio del juego
+        if (playOnlyOnce && alreadyPlayed)
+        {
+            audioSrc.playOnAwake = false;
+            audioSrc.Stop();
+            vp.playOnAwake = false;
+            vp.Stop();
+            if (videoPanel != null) videoPanel.SetActive(false);
+            IsPlaying = false;
+            enabled = false;
+            return;
+        }
+
         audioSrc.playOnAwake = false;
         audioSrc.ignoreListenerPause = true;
 
         vp.playOnAwake = false;
         vp.isLooping = false;
         vp.waitForFirstFrame = true;
-        vp.timeUpdateMode = VideoTimeUpdateMode.UnscaledGameTime;   // no depende de Time.timeScale (que vale 0 en el inicio)
+        vp.timeUpdateMode = VideoTimeUpdateMode.UnscaledGameTime;
         vp.renderMode = VideoRenderMode.RenderTexture;
         vp.audioOutputMode = VideoAudioOutputMode.AudioSource;
         vp.controlledAudioTrackCount = 1;
@@ -69,7 +75,7 @@ public class IntroVideo : MonoBehaviour
         if (videoPanel != null)
         {
             videoPanel.SetActive(true);
-            videoPanel.transform.SetAsLastSibling();   // por encima de la pantalla del logo
+            videoPanel.transform.SetAsLastSibling();
         }
 
         bool noVideo = vp.clip == null && string.IsNullOrEmpty(vp.url);
@@ -88,18 +94,38 @@ public class IntroVideo : MonoBehaviour
         vp.targetTexture = rt;
         if (videoImage != null) videoImage.texture = rt;
 
-        // Preparar antes de reproducir evita ver un parpadeo negro al inicio
         vp.Prepare();
-        while (!vp.isPrepared && !ended) yield return null;
+        float waited = 0f;
+        while (!vp.isPrepared && !ended)
+        {
+            waited += Time.unscaledDeltaTime;
+            if (waited > prepareTimeout)
+            {
+                Debug.LogWarning("IntroVideo: el video no se pudo preparar (codec no compatible?). Se omite.");
+                End();
+                yield break;
+            }
+            yield return null;
+        }
         if (ended) yield break;
 
         startTime = Time.realtimeSinceStartup;
         vp.Play();
+        playing = true;
     }
 
     void Update()
     {
         if (ended) return;
+
+        if (!playing) return;
+
+        if (Time.realtimeSinceStartup - startTime > stallTimeout && vp.frame <= 0)
+        {
+            Debug.LogWarning("IntroVideo: el video no avanza (pantalla negra). Se omite.");
+            End();
+            return;
+        }
 
         if (Time.realtimeSinceStartup - startTime >= skipDelay && Input.GetKeyDown(skipKey))
             End();
@@ -109,7 +135,6 @@ public class IntroVideo : MonoBehaviour
 
     void OnError(VideoPlayer source, string message)
     {
-        // Si el video falla (codec no compatible, etc.) no dejar el juego atascado en negro
         Debug.LogWarning("IntroVideo: error al reproducir el video: " + message);
         End();
     }
